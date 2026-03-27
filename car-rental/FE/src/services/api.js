@@ -2283,3 +2283,40 @@ export const verifyLicense = async (customerId, approved, rejectionReason = null
     });
     return res.data;
 };
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT FORM & SIGN+PAY FLOW APIs
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Lấy dữ liệu form hợp đồng (điền sẵn từ booking)
+export const getContractFormData = async (bookingId) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get(`/api/contracts/form-data/${bookingId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+// Lấy hợp đồng để xem trước (trước khi ký)
+export const getContractForReview = async (contractId) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get(`/api/contracts/${contractId}/review`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+// Ký hợp đồng và thanh toán
+export const signAndPay = async (contractId, signature, paymentMethod, amount) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.post(`/api/contracts/${contractId}/sign-and-pay`, {
+        customerSignature: signature,
+        paymentMethod,
+        amount
+    }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export default api;

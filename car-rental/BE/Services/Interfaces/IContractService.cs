@@ -18,4 +18,11 @@ public interface IContractService
     Task<LicenseInfoDto?> GetCustomerLicenseAsync(int customerId);
     Task<IEnumerable<LicenseVerificationListDto>> GetPendingLicenseVerificationsAsync(int supplierId);
     Task<LicenseInfoDto> VerifyLicenseAsync(int customerId, int supplierId, VerifyLicenseRequest request);
+
+    // ── Contract Form & Sign+Pay Flow ────────────────────────────────────────
+    Task<ContractFormDataDto> GetContractFormDataAsync(int bookingId);
+    Task<ContractReviewDto> GetContractForReviewAsync(int contractId, int userId);
+    Task<ContractReviewDto> SignAndPayAsync(int contractId, int userId, ContractSignAndPayRequest request);
 }
+
+```
