@@ -164,6 +164,65 @@ public class ContractController : ControllerBase
             return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
         }
     }
+
+    // ── Contract Form & Sign+Pay Flow ───────────────────────────────────────
+
+    /// <summary>Get contract form data (pre-fill from booking)</summary>
+    [HttpGet("form-data/{bookingId:int}")]
+    public async Task<IActionResult> GetFormData(int bookingId)
+    {
+        try
+        {
+            var formData = await _contractService.GetContractFormDataAsync(bookingId);
+            return Ok(ApiResponse<ContractFormDataDto>.Ok(formData));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+    }
+
+    /// <summary>Get contract for review (before signature)</summary>
+    [HttpGet("{id:int}/review")]
+    public async Task<IActionResult> GetForReview(int id)
+    {
+        try
+        {
+            var review = await _contractService.GetContractForReviewAsync(id, CurrentUserId);
+            return Ok(ApiResponse<ContractReviewDto>.Ok(review));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message, 403));
+        }
+    }
+
+    /// <summary>Sign contract and initiate payment (customer action)</summary>
+    [HttpPost("{id:int}/sign-and-pay")]
+    public async Task<IActionResult> SignAndPay(int id, [FromBody] ContractSignAndPayRequest request)
+    {
+        try
+        {
+            var result = await _contractService.SignAndPayAsync(id, CurrentUserId, request);
+            return Ok(ApiResponse<ContractReviewDto>.Ok(result, "Ký hợp đồng và thanh toán thành công"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message, 403));
+        }
+    }
 }
 
 public class UpdateContractTermsRequest

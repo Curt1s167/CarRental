@@ -25,10 +25,14 @@ public class ContractService : IContractService
     {
         var c = await _context.Contracts
             .Include(x => x.Booking).ThenInclude(b => b!.Car).ThenInclude(car => car!.CarBrand)
+            .Include(x => x.Booking).ThenInclude(b => b!.Car).ThenInclude(car => car!.FuelType)
+            .Include(x => x.Booking).ThenInclude(b => b!.BookingFinancial)
+            .Include(x => x.Booking).ThenInclude(b => b!.Payments)
             .Include(x => x.Customer).ThenInclude(u => u!.UserDetail)
-            .Include(x => x.Supplier)
+            .Include(x => x.Supplier).ThenInclude(u => u!.UserDetail)
             .Include(x => x.ContractStatus)
-            .Include(x => x.Car)
+            .Include(x => x.Car).ThenInclude(car => car!.CarBrand)
+            .Include(x => x.Car).ThenInclude(car => car!.FuelType)
             .FirstOrDefaultAsync(x => x.ContractId == contractId && !x.IsDeleted);
 
         return c == null ? null : MapToDto(c);
@@ -38,10 +42,14 @@ public class ContractService : IContractService
     {
         var c = await _context.Contracts
             .Include(x => x.Booking).ThenInclude(b => b!.Car).ThenInclude(car => car!.CarBrand)
+            .Include(x => x.Booking).ThenInclude(b => b!.Car).ThenInclude(car => car!.FuelType)
+            .Include(x => x.Booking).ThenInclude(b => b!.BookingFinancial)
+            .Include(x => x.Booking).ThenInclude(b => b!.Payments)
             .Include(x => x.Customer).ThenInclude(u => u!.UserDetail)
-            .Include(x => x.Supplier)
+            .Include(x => x.Supplier).ThenInclude(u => u!.UserDetail)
             .Include(x => x.ContractStatus)
-            .Include(x => x.Car)
+            .Include(x => x.Car).ThenInclude(car => car!.CarBrand)
+            .Include(x => x.Car).ThenInclude(car => car!.FuelType)
             .FirstOrDefaultAsync(x => x.BookingId == bookingId && !x.IsDeleted);
 
         return c == null ? null : MapToDto(c);
@@ -112,6 +120,7 @@ public class ContractService : IContractService
         var booking = await _context.Bookings
             .Include(b => b.Customer).ThenInclude(u => u!.UserDetail)
             .Include(b => b.Car).ThenInclude(c => c!.CarBrand)
+            .Include(b => b.Car).ThenInclude(c => c!.Supplier).ThenInclude(u => u!.UserDetail)
             .Include(b => b.BookingFinancial)
             .FirstOrDefaultAsync(b => b.BookingId == bookingId && !b.IsDeleted)
             ?? throw new KeyNotFoundException("Booking không tồn tại");
@@ -360,23 +369,79 @@ public class ContractService : IContractService
             licenseInfo = MapToLicenseDto(c.Customer);
         }
 
+        var car = c.Car ?? c.Booking?.Car;
+        var booking = c.Booking;
+        var financial = booking?.BookingFinancial;
+        var days = Math.Max(1, c.EndDate.DayNumber - c.StartDate.DayNumber);
+
+        // Get latest successful payment
+        ContractPaymentInfoDto? paymentInfo = null;
+        var payment = booking?.Payments?
+            .OrderByDescending(p => p.PaymentDate)
+            .FirstOrDefault();
+        if (payment != null)
+        {
+            paymentInfo = new ContractPaymentInfoDto
+            {
+                PaymentId = payment.PaymentId,
+                Amount = payment.Amount,
+                PaymentMethod = payment.PaymentMethod,
+                PaymentStatus = payment.PaymentStatus ?? "pending",
+                TransactionId = payment.TransactionId,
+                PaymentDate = payment.PaymentDate,
+                PaymentType = payment.PaymentType
+            };
+        }
+
         return new ContractDto
         {
             ContractId = c.ContractId,
             BookingId = c.BookingId,
             ContractCode = c.ContractCode,
+
+            // Supplier
+            SupplierId = c.SupplierId,
+            SupplierName = c.Supplier?.FullName ?? c.Supplier?.Email,
+            SupplierPhone = c.Supplier?.Phone,
+            SupplierEmail = c.Supplier?.Email,
+            SupplierAddress = c.Supplier?.UserDetail?.Address,
+            SupplierNationalId = c.Supplier?.UserDetail?.NationalId,
+
+            // Customer
             CustomerId = c.CustomerId,
             CustomerName = c.Customer?.FullName ?? c.Customer?.Email,
             CustomerEmail = c.Customer?.Email,
             CustomerPhone = c.Customer?.Phone,
-            SupplierId = c.SupplierId,
-            SupplierName = c.Supplier?.FullName ?? c.Supplier?.Email,
+            CustomerAddress = c.Customer?.UserDetail?.Address,
+            CustomerNationalId = c.Customer?.UserDetail?.NationalId,
+            CustomerDrivingLicense = c.Customer?.UserDetail?.DrivingLicense,
+
+            // Car
             CarId = c.CarId,
-            CarModel = c.Car?.CarModel ?? c.Booking?.Car?.CarModel,
-            CarBrand = c.Car?.CarBrand?.BrandName ?? c.Booking?.Car?.CarBrand?.BrandName,
-            LicensePlate = c.Car?.LicensePlate,
+            CarModel = car?.CarModel,
+            CarBrand = car?.CarBrand?.BrandName,
+            LicensePlate = car?.LicensePlate,
+            CarYear = car?.Year,
+            CarSeats = car?.Seats,
+            CarColor = car?.Color,
+            CarTransmission = car?.Transmission,
+            CarFuelType = car?.FuelType?.FuelTypeName,
+
+            // Time & Location
             StartDate = c.StartDate,
             EndDate = c.EndDate,
+            TotalDays = days,
+            PickupLocation = booking?.PickupLocation,
+            DropoffLocation = booking?.DropoffLocation,
+
+            // Financial
+            DailyRate = car?.RentalPricePerDay ?? 0,
+            TotalFare = financial?.TotalFare ?? 0,
+            DepositAmount = booking?.DepositAmount ?? 0,
+            AppliedDiscount = financial?.AppliedDiscount ?? 0,
+            LateFeeAmount = financial?.LateFeeAmount ?? 0,
+
+            // Contract
             TermsAndConditions = c.TermsAndConditions,
             SignedByCustomer = c.SignedByCustomer,
             SignedBySupplier = c.SignedBySupplier,
@@ -386,6 +451,9 @@ public class ContractService : IContractService
             ContractStatusName = c.ContractStatus?.StatusName,
             CreatedAt = c.CreatedAt,
             UpdatedAt = c.UpdatedAt,
+
+            // Payment
+            PaymentInfo = paymentInfo,
             CustomerLicense = licenseInfo
         };
     }
@@ -412,7 +480,10 @@ public class ContractService : IContractService
     {
         var car = booking.Car;
         var customer = booking.Customer;
+        var supplier = car?.Supplier;
         var totalPrice = booking.BookingFinancial?.TotalFare ?? 0;
+        var dailyRate = car?.RentalPricePerDay ?? 0;
+        var deposit = booking.DepositAmount;
         var days = Math.Max(1, (int)(booking.EndDate - booking.StartDate).TotalDays);
 
         return $@"HỢP ĐỒNG THUÊ XE TỰ LÁI
@@ -420,14 +491,29 @@ public class ContractService : IContractService
 Mã đơn đặt: #{booking.BookingId}
 
 ĐIỀU 1: THÔNG TIN CÁC BÊN
-- Bên cho thuê (Supplier): Chủ sở hữu xe
-- Bên thuê (Customer): {customer?.FullName ?? customer?.Email ?? "N/A"}
+
+BÊN A (Bên cho thuê):
+- Họ tên: {supplier?.FullName ?? supplier?.Email ?? "Chủ sở hữu xe"}
+- Điện thoại: {supplier?.Phone ?? "N/A"}
+- Email: {supplier?.Email ?? "N/A"}
+- Địa chỉ: {supplier?.UserDetail?.Address ?? "Theo đăng ký"}
+- CCCD/CMND: {supplier?.UserDetail?.NationalId ?? "N/A"}
+
+BÊN B (Bên thuê):
+- Họ tên: {customer?.FullName ?? customer?.Email ?? "N/A"}
+- Điện thoại: {customer?.Phone ?? "N/A"}
+- Email: {customer?.Email ?? "N/A"}
+- Địa chỉ: {customer?.UserDetail?.Address ?? "Theo đăng ký"}
+- CCCD/CMND: {customer?.UserDetail?.NationalId ?? "N/A"}
+- GPLX: {customer?.UserDetail?.DrivingLicense ?? "N/A"}
 
 ĐIỀU 2: THÔNG TIN XE CHO THUÊ
 - Xe: {car?.CarBrand?.BrandName} {car?.CarModel}
 - Biển số: {car?.LicensePlate ?? "N/A"}
+- Năm sản xuất: {car?.Year ?? 0}
 - Số chỗ: {car?.Seats ?? 0}
-- Nhiên liệu: Theo thông số xe
+- Màu sắc: {car?.Color ?? "N/A"}
+- Hộp số: {car?.Transmission ?? "N/A"}
 
 ĐIỀU 3: THỜI GIAN & ĐỊA ĐIỂM
 - Thời gian thuê: {booking.StartDate:dd/MM/yyyy} đến {booking.EndDate:dd/MM/yyyy} ({days} ngày)
@@ -435,8 +521,11 @@ Mã đơn đặt: #{booking.BookingId}
 - Địa điểm trả xe: {booking.DropoffLocation ?? "Theo thỏa thuận"}
 
 ĐIỀU 4: GIÁ THUÊ & THANH TOÁN
-- Giá thuê: {totalPrice:N0} VNĐ
-- Phương thức: Theo quy định hệ thống
+- Đơn giá thuê: {dailyRate:N0} VNĐ / ngày
+- Số ngày thuê: {days} ngày
+- Tiền đặt cọc: {deposit:N0} VNĐ
+- Tổng tiền thuê: {totalPrice:N0} VNĐ
+- Phương thức thanh toán: Thanh toán trực tuyến qua hệ thống hoặc tiền mặt
 
 ĐIỀU 5: TRÁCH NHIỆM BÊN THUÊ
 1. Sử dụng xe đúng mục đích, không vi phạm pháp luật
@@ -444,9 +533,9 @@ Mã đơn đặt: #{booking.BookingId}
 3. Trả xe đúng hạn, đúng tình trạng
 4. Chịu chi phí sửa chữa nếu có hư hỏng do lỗi người thuê
 5. Không cho bên thứ ba mượn/sử dụng xe
-6. Phải có bằng lái xe hợp lệ
+6. Phải có bằng lái xe hợp lệ đã được xác minh
 
-ĐIỀU 6: TRÁCH NHIỆM BÊN CHO THUÊ  
+ĐIỀU 6: TRÁCH NHIỆM BÊN CHO THUÊ
 1. Bàn giao xe đúng thời gian, đúng tình trạng
 2. Cung cấp đầy đủ giấy tờ xe hợp lệ
 3. Hỗ trợ kỹ thuật khi xe gặp sự cố (không do lỗi người thuê)
@@ -458,7 +547,173 @@ Mã đơn đặt: #{booking.BookingId}
 - Hư hỏng xe: Đền bù theo biên bản kiểm tra
 
 ĐIỀU 8: ĐIỀU KHOẢN CHUNG
-- Hợp đồng có hiệu lực khi cả hai bên ký xác nhận
-- Tranh chấp giải quyết theo pháp luật Việt Nam";
+- Hợp đồng có hiệu lực khi cả hai bên ký xác nhận điện tử
+- Chữ ký điện tử có giá trị pháp lý tương đương chữ ký tay
+- Mã hợp đồng là duy nhất, không thể thay đổi sau khi ký
+- Tranh chấp giải quyết theo pháp luật Việt Nam
+- Hợp đồng được lập thành bản điện tử, mỗi bên giữ quyền truy cập";
     }
-}
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  CONTRACT FORM & SIGN+PAY FLOW
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public async Task<ContractFormDataDto> GetContractFormDataAsync(int bookingId)
+    {
+        var booking = await _context.Bookings
+            .Include(b => b.Customer).ThenInclude(u => u!.UserDetail)
+            .Include(b => b.Car).ThenInclude(c => c!.CarBrand)
+            .Include(b => b.Car).ThenInclude(c => c!.Supplier).ThenInclude(u => u!.UserDetail)
+            .Include(b => b.Car).ThenInclude(c => c!.FuelType)
+            .Include(b => b.BookingFinancial)
+            .FirstOrDefaultAsync(b => b.BookingId == bookingId && !b.IsDeleted)
+            ?? throw new KeyNotFoundException("Booking không tồn tại");
+
+        var car = booking.Car;
+        var supplier = car?.Supplier;
+        var customer = booking.Customer;
+        var financial = booking.BookingFinancial;
+        var dailyRate = car?.RentalPricePerDay ?? 0;
+        var totalPrice = financial?.TotalFare ?? 0;
+        var days = Math.Max(1, (int)(booking.EndDate - booking.StartDate).TotalDays);
+
+        return new ContractFormDataDto
+        {
+            // Supplier
+            SupplierName = supplier?.FullName ?? supplier?.Email,
+            SupplierPhone = supplier?.Phone,
+            SupplierEmail = supplier?.Email,
+            SupplierAddress = supplier?.UserDetail?.Address,
+            SupplierNationalId = supplier?.UserDetail?.NationalId,
+
+            // Customer
+            CustomerName = customer?.FullName ?? customer?.Email,
+            CustomerPhone = customer?.Phone,
+            CustomerEmail = customer?.Email,
+            CustomerAddress = customer?.UserDetail?.Address,
+            CustomerNationalId = customer?.UserDetail?.NationalId,
+            CustomerDrivingLicense = customer?.UserDetail?.DrivingLicense,
+
+            // Car
+            CarBrand = car?.CarBrand?.BrandName,
+            CarModel = car?.CarModel,
+            LicensePlate = car?.LicensePlate,
+            CarYear = car?.Year,
+            CarSeats = car?.Seats,
+            CarColor = car?.Color,
+            CarTransmission = car?.Transmission,
+            CarFuelType = car?.FuelType?.FuelTypeName,
+
+            // Rental Details
+            StartDate = booking.StartDate,
+            EndDate = booking.EndDate,
+            TotalDays = days,
+            PickupLocation = booking.PickupLocation,
+            DropoffLocation = booking.DropoffLocation,
+
+            // Financial
+            DailyRate = dailyRate,
+            TotalFare = totalPrice,
+            DepositAmount = booking.DepositAmount,
+            AppliedDiscount = financial?.AppliedDiscount ?? 0,
+            LateFeeAmount = financial?.LateFeeAmount ?? 0
+        };
+    }
+
+    public async Task<ContractReviewDto> GetContractForReviewAsync(int contractId, int userId)
+    {
+        var contract = await _context.Contracts
+            .Include(c => c.Booking).ThenInclude(b => b!.Car).ThenInclude(car => car!.CarBrand)
+            .Include(c => c.Booking).ThenInclude(b => b!.Car).ThenInclude(car => car!.FuelType)
+            .Include(c => c.Booking).ThenInclude(b => b!.BookingFinancial)
+            .Include(c => c.Booking).ThenInclude(b => b!.Payments)
+            .Include(c => c.Customer).ThenInclude(u => u!.UserDetail)
+            .Include(c => c.Supplier).ThenInclude(u => u!.UserDetail)
+            .Include(c => c.Car).ThenInclude(car => car!.CarBrand)
+            .Include(c => c.Car).ThenInclude(car => car!.FuelType)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId && !c.IsDeleted)
+            ?? throw new KeyNotFoundException("Hợp đồng không tồn tại");
+
+        // Verify user is customer or supplier
+        if (contract.CustomerId != userId && contract.SupplierId != userId)
+            throw new UnauthorizedAccessException("Bạn không có quyền xem hợp đồng này");
+
+        var formData = await GetContractFormDataAsync(contract.BookingId);
+
+        // Get payment info
+        ContractPaymentInfoDto? paymentInfo = null;
+        var payment = contract.Booking?.Payments?
+            .OrderByDescending(p => p.PaymentDate)
+            .FirstOrDefault();
+        if (payment != null)
+        {
+            paymentInfo = new ContractPaymentInfoDto
+            {
+                PaymentId = payment.PaymentId,
+                Amount = payment.Amount,
+                PaymentMethod = payment.PaymentMethod,
+                PaymentStatus = payment.PaymentStatus ?? "pending",
+                TransactionId = payment.TransactionId,
+                PaymentDate = payment.PaymentDate,
+                PaymentType = payment.PaymentType
+            };
+        }
+
+        return new ContractReviewDto
+        {
+            ContractId = contract.ContractId,
+            ContractCode = contract.ContractCode,
+            FormData = formData,
+            Terms = contract.TermsAndConditions,
+            CustomerSignature = contract.CustomerSignature,
+            SupplierSignature = contract.SupplierSignature,
+            PaymentInfo = paymentInfo,
+            ContractStatusId = contract.ContractStatusId,
+            ContractStatusName = contract.ContractStatus?.StatusName
+        };
+    }
+
+    public async Task<ContractReviewDto> SignAndPayAsync(int contractId, int userId, ContractSignAndPayRequest request)
+    {
+        var contract = await _context.Contracts
+            .Include(c => c.Booking)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId && !c.IsDeleted)
+            ?? throw new KeyNotFoundException("Hợp đồng không tồn tại");
+
+        // Verify user is customer
+        if (contract.CustomerId != userId)
+            throw new UnauthorizedAccessException("Chỉ khách hàng mới có thể ký và thanh toán hợp đồng này");
+
+        if (contract.ContractStatusId == 10) // terminated
+            throw new InvalidOperationException("Hợp đồng đã bị hủy");
+
+        // Sign contract as customer
+        if (contract.SignedByCustomer)
+            throw new InvalidOperationException("Bạn đã ký hợp đồng này rồi");
+
+        contract.CustomerSignature = request.Signature;
+        contract.UpdatedAt = DateTime.UtcNow;
+
+        // Update contract status
+        if (!string.IsNullOrEmpty(contract.SupplierSignature))
+        {
+            contract.ContractStatusId = 8; // active - both signed
+        }
+        else
+        {
+            contract.ContractStatusId = 7; // signed - one party signed
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Notify supplier that customer signed
+        try
+        {
+            await _notification.SendAsync(contract.SupplierId,
+                $"Khách hàng đã ký hợp đồng #{contract.ContractCode}. Vui lòng ký để hoàn tất.",
+                "contract", contract.BookingId, "booking");
+        }
+        catch { /* ignore */ }
+
+        return await GetContractForReviewAsync(contractId, userId);
+    }

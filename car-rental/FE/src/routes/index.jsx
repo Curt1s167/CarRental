@@ -20,6 +20,7 @@ import OwnerRegistrationSuccessPage from '../pages/owner/OwnerRegistrationSucces
 import ForgotPassword from '../components/features/auth/ForgotPassword';
 import ResetPassword from '../components/features/auth/ResetPassword';
 import MessagePage from '../pages/chatMessage/Message';
+import ContractSigningPage from '../pages/ContractSigningPage';
 
 // Components
 import { ProtectedRoute } from '../components/features/auth/ProtectedRoute.jsx';
@@ -125,6 +126,14 @@ const AppRoutes = () => {
                 element={
                     <ProtectedRoute>
                         <ProfilePage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/contract/:contractId"
+                element={
+                    <ProtectedRoute>
+                        <ContractSigningPage />
                     </ProtectedRoute>
                 }
             />
