@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import { addFavorite, removeFavorite, getFavorites } from '@/services/api';
+import { getItem } from '@/utils/auth';
 import { toast } from 'react-toastify';
 import './FavoriteButton.scss';
 
@@ -15,6 +16,12 @@ const FavoriteButton = ({ carId, supplierId, initialIsFavorite = false, initialF
     useEffect(() => {
         let mounted = true;
         const checkFavorite = async () => {
+            // Skip API call if user is not logged in
+            const token = getItem('token');
+            if (!token) {
+                if (mounted) setChecked(true);
+                return;
+            }
             try {
                 const favorites = await getFavorites();
                 const found = favorites.find(f => f.carId === carId);
@@ -24,7 +31,7 @@ const FavoriteButton = ({ carId, supplierId, initialIsFavorite = false, initialF
                     setChecked(true);
                 }
             } catch (e) {
-                setChecked(true);
+                if (mounted) setChecked(true);
             }
         };
         checkFavorite();

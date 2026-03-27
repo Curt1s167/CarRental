@@ -26,7 +26,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _userRepo.GetByEmailAsync(request.Email)
+        var user = await _userRepo.GetByEmailOrUsernameAsync(request.Email)
             ?? throw new UnauthorizedAccessException("Email hoặc mật khẩu không đúng");
 
         if (!user.IsActive)

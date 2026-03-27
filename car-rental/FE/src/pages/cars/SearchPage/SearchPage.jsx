@@ -1041,7 +1041,7 @@ const SearchPage = () => {
                             car.thumbnailUrl ||
                             car.images?.find((img) => img.isMain)?.imageUrl ||
                             car.images?.[0]?.imageUrl ||
-                            "https://via.placeholder.com/400x250?text=Car+Image"
+                            "/placeholder-car.svg"
                         }
                         alt={`${car.carModel || car.model}`}
                         className={`w-full h-full object-cover object-center transition-all duration-700 ${isHovered ? "scale-110" : "scale-100"
@@ -2310,7 +2310,7 @@ const SearchPage = () => {
                                                         car.thumbnailUrl ||
                                                         car.images?.find((img) => img.isMain)?.imageUrl ||
                                                         car.images?.[0]?.imageUrl ||
-                                                        "https://via.placeholder.com/300"
+                                                        "/placeholder-car.svg"
                                                     }
                                                     alt={car.carModel || car.model}
                                                     className="w-16 h-16 object-cover rounded-xl shadow-lg group-hover:scale-110 transition-transform"

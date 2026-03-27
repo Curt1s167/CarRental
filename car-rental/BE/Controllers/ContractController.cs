@@ -103,6 +103,29 @@ public class ContractController : ControllerBase
         }
     }
 
+    /// <summary>Reject a contract (customer or supplier). Cancels the booking.</summary>
+    [HttpPost("{id:int}/reject")]
+    public async Task<IActionResult> Reject(int id, [FromBody] RejectContractRequest request)
+    {
+        try
+        {
+            var contract = await _contractService.RejectContractAsync(id, CurrentUserId, request.Reason);
+            return Ok(ApiResponse<ContractDto>.Ok(contract, "Từ chối hợp đồng thành công"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message, 403));
+        }
+    }
+
     /// <summary>Update contract terms (supplier only, draft state)</summary>
     [Authorize(Roles = "supplier,admin")]
     [HttpPut("{id:int}/terms")]
@@ -228,4 +251,9 @@ public class ContractController : ControllerBase
 public class UpdateContractTermsRequest
 {
     public string Terms { get; set; } = string.Empty;
+}
+
+public class RejectContractRequest
+{
+    public string? Reason { get; set; }
 }

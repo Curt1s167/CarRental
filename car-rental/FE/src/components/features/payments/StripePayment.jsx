@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../../../services/api';
 
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51TCc39BDonNUml1zWfItZQdEnZ0aPJSiidpg5adP8cAudhqJX57fAl0mANpcC7mAD6C4QA2tMWQ4tbMU8TAsaHsW00S6Ll0EBg';
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+
+// Lazy-load Stripe only when needed (avoid loading on every page)
+let stripePromise = null;
+const getStripePromise = () => {
+  if (!stripePromise) {
+    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  }
+  return stripePromise;
+};
 
 function CheckoutForm({ bookingId, onSuccess, onError }) {
   const stripe = useStripe();
@@ -111,7 +119,7 @@ export default function StripePayment({ bookingId, amount, onSuccess, onError })
         <span className="text-sm text-gray-500">Thanh toán bảo mật</span>
       </div>
       {clientSecret && (
-        <Elements stripe={stripePromise} options={{ clientSecret, locale: 'vi' }}>
+        <Elements stripe={getStripePromise()} options={{ clientSecret, locale: 'vi' }}>
           <CheckoutForm bookingId={bookingId} onSuccess={onSuccess} onError={onError} />
         </Elements>
       )}

@@ -47,6 +47,7 @@
     "react-signature-canvas": "^1.1.0-alpha.2",
     "react-slick": "^0.30.3",
     "react-toastify": "^10.0.4",
+    "remixicon": "^4.9.1",
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.8.1",
     "sockjs-client": "^1.6.1",

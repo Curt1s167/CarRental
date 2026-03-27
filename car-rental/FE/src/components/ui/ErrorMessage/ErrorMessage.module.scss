@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../../../styles/variables' as *;
 @use '../../../styles/mixins' as *;
 
@@ -5,7 +6,7 @@
   @include flex-center;
   flex-direction: column;
   padding: $spacing-md;
-  background-color: lighten($danger-color, 35%);
+  background-color: color.adjust($danger-color, $lightness: 35%);
   border: 1px solid $danger-color;
   border-radius: $border-radius-sm;
   margin: $spacing-md 0;
@@ -28,6 +29,6 @@
   transition: $transition-base;
 
   &:hover {
-    background-color: darken($danger-color, 10%);
+    background-color: color.adjust($danger-color, $lightness: -10%);
   }
 } 

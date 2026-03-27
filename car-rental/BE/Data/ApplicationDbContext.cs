@@ -59,6 +59,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ChatMessageImage> ChatMessageImages { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<SignUpToProvide> SignUpToProvides { get; set; }
+    public DbSet<RefundRequest> RefundRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

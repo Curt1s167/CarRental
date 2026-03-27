@@ -592,7 +592,7 @@ const CarDetailPage = () => {
             className={`relative ${isZoomed ? "aspect-auto" : "aspect-[16/9]"} bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500`}
           >
             <img
-              src={car?.images?.[modalImageIndex]?.imageUrl || "https://via.placeholder.com/1200x675"}
+              src={car?.images?.[modalImageIndex]?.imageUrl || "/placeholder-car.svg"}
               alt={`${car?.model} Image ${modalImageIndex + 1}`}
               className={`w-full h-full transition-all duration-500 cursor-pointer ${
                 isZoomed ? "object-contain scale-150" : "object-contain hover:scale-105"
@@ -654,7 +654,7 @@ const CarDetailPage = () => {
                 }`}
               >
                 <img
-                  src={img.imageUrl || "https://via.placeholder.com/80x64"}
+                  src={img.imageUrl || "/placeholder-car.svg"}
                   alt={`Thumbnail ${idx + 1}`}
                   className="w-full h-full object-cover"
                   onLoad={() => handleImageLoad(idx)}
@@ -888,7 +888,7 @@ const CarDetailPage = () => {
                 </div>
               )}
               <img
-                src={mainImage?.imageUrl || "https://via.placeholder.com/800x600"}
+                src={mainImage?.imageUrl || "/placeholder-car.svg"}
                 alt={car.model + " Main Image"}
                 className="w-full h-full object-cover cursor-pointer"
                 onClick={() => setShowGalleryModal(true)}
@@ -944,7 +944,7 @@ const CarDetailPage = () => {
                     </div>
                   )}
                   <img
-                    src={img.imageUrl || "https://via.placeholder.com/80x64"}
+                    src={img.imageUrl || "/placeholder-car.svg"}
                     alt={`Thumbnail ${idx + 1}`}
                     className="w-full h-full object-cover"
                     onLoad={() => handleImageLoad(idx)}
@@ -960,7 +960,7 @@ const CarDetailPage = () => {
             <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in">
               <div className="relative w-full max-w-5xl">
                 <img
-                  src={car?.images?.[activeImageIndex]?.imageUrl || "https://via.placeholder.com/1200x675"}
+                  src={car?.images?.[activeImageIndex]?.imageUrl || "/placeholder-car.svg"}
                   alt={`${car?.model} Image ${activeImageIndex + 1}`}
                   className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-2xl"
                   draggable={false}

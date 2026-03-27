@@ -17,7 +17,8 @@ import {
     getBookingById,
     updateRating,
     getCountryCodes,
-    getRatingsByBookingId
+    getRatingsByBookingId,
+    createRefundRequest
 } from '@/services/api';
 import BookingModal from '@/components/features/cars/BookingModal';
 import {
@@ -1181,6 +1182,26 @@ const handleCancelBooking = async (bookingId) => {
                                                 >
                                                     <i className="fas fa-times"></i>
                                                     Hủy
+                                                </button>
+                                            )}
+
+                                            {['confirmed', 'in_progress', 'completed'].includes(booking.statusName) && (
+                                                <button 
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        const reason = window.prompt("Nhập lý do yêu cầu hoàn tiền:");
+                                                        if (reason === null) return;
+                                                        try {
+                                                            await createRefundRequest(booking.bookingId, reason || "Khách hàng yêu cầu hoàn tiền");
+                                                            toast.success("Yêu cầu hoàn tiền đã được gửi! Đang chờ xác nhận.");
+                                                        } catch (err) {
+                                                            toast.error(err?.response?.data?.message || err?.message || "Gửi yêu cầu hoàn tiền thất bại");
+                                                        }
+                                                    }}
+                                                >
+                                                    <i className="fas fa-undo"></i>
+                                                    Hoàn tiền
                                                 </button>
                                             )}
                                             

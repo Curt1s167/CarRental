@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { useLocation, useNavigate, Link } from "react-router-dom"
 import { post, getBookingById, getBookingByTransactionId, getPriceBreakdown, initiatePlatformFeePayment } from "@/services/api.js"
 import { useAuth } from "@/hooks/useAuth.js"
@@ -9,7 +9,7 @@ import PickupPaymentSummary from "@/components/features/payments/PickupPaymentSu
 import RetryPaymentSummary from '@/components/features/payments/RetryPaymentSummary'
 import PlatformFeePaymentSummary from '@/components/features/payments/PlatformFeePaymentSummary'
 import LoadingSpinner from '@/components/ui/Loading/LoadingSpinner.jsx';
-import StripePayment from '@/components/features/payments/StripePayment.jsx';
+const StripePayment = lazy(() => import('@/components/features/payments/StripePayment.jsx'));
 import {
   FaCreditCard,
   FaHandHoldingUsd,
@@ -1163,6 +1163,7 @@ const PaymentPage = () => {
                       {paymentMethod === "stripe" && showStripeForm && stripeBookingId && (
                         <div className="mt-4 p-6 bg-white border-2 border-blue-200 rounded-2xl shadow-lg">
                           <h3 className="font-semibold text-gray-800 mb-4">Nhập thông tin thẻ</h3>
+                          <Suspense fallback={<div className="text-center py-4">Đang tải thanh toán...</div>}>
                           <StripePayment
                             bookingId={stripeBookingId}
                             amount={amountToPay}
@@ -1184,6 +1185,7 @@ const PaymentPage = () => {
                             }}
                             onError={(msg) => { setError(msg); setIsProcessing(false); }}
                           />
+                          </Suspense>
                         </div>
                       )}
                     </div>

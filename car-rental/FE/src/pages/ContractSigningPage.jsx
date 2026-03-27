@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -11,7 +11,7 @@ import {
 
 import { getContractForReview, signAndPay, getContractById } from '@/services/api';
 import { generateContractHTML, formatCurrency, formatDate, downloadHTML, generatePDF, numberToWords } from '@/utils/contractUtils';
-import StripePayment from '@/components/features/payments/StripePayment';
+const StripePayment = lazy(() => import('@/components/features/payments/StripePayment'));
 import SignatureModal, { SignatureDisplay } from '@/components/common/SignatureModal';
 
 /**
@@ -546,12 +546,14 @@ const ContractSigningPage = () => {
                     {/* Stripe integration */}
                     {paymentMethod === 'stripe' && (
                       <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
+                        <Suspense fallback={<div className="text-center py-4">Đang tải thanh toán...</div>}>
                         <StripePayment
                           bookingId={fd.bookingId || contractData?.bookingId}
                           amount={totalAmount}
                           onSuccess={handlePayment}
                           onError={(msg) => toast.error(msg || 'Thanh toán thất bại')}
                         />
+                        </Suspense>
                       </div>
                     )}
 

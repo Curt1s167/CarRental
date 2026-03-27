@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaCarSide, FaHome, FaCar, FaStore, FaSearch, FaHeart, FaChevronDown, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaTimes, FaBars, FaPhone, FaUser, FaCalendarAlt, FaComments } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import AutocompleteSearch from '@/components/Common/AutocompleteSearch';
+import NotificationDropdown from '@/components/Common/NotificationDropdown';
 import api from "@/services/api";
 
 const Header = ({
@@ -178,6 +179,8 @@ const Header = ({
                         >
                             <FaHeart className="text-lg" />
                         </Link>
+                        {/* Notification Bell */}
+                        {isAuthenticated && <NotificationDropdown />}
                         {/* Enhanced User Account */}
                         <div className="relative" ref={userDropdownRef}>
                             {isAuthenticated ? (

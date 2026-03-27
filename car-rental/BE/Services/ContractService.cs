@@ -154,12 +154,12 @@ public class ContractService : IContractService
         await _context.Contracts.AddAsync(contract);
         await _context.SaveChangesAsync();
 
-        // Notify customer
+        // Notify customer with actionable notification
         try
         {
             await _notification.SendAsync(booking.CustomerId,
                 $"Hợp đồng thuê xe #{contractCode} đã được tạo. Vui lòng kiểm tra và ký.",
-                "contract", bookingId, "booking");
+                "in_app", contract.ContractId, "contract", "contract_sign_request");
         }
         catch { /* ignore */ }
 
@@ -224,9 +224,24 @@ public class ContractService : IContractService
         {
             int notifyUserId = isCustomer ? contract.SupplierId : contract.CustomerId;
             string signerName = isCustomer ? "Khách hàng" : "Chủ xe";
-            await _notification.SendAsync(notifyUserId,
-                $"{signerName} đã ký hợp đồng #{contract.ContractCode}",
-                "contract", contract.BookingId, "booking");
+
+            if (contract.ContractStatusId == 8) // both signed
+            {
+                // Notify both parties that contract is fully signed
+                await _notification.SendAsync(contract.CustomerId,
+                    $"Hợp đồng #{contract.ContractCode} đã được ký hoàn tất bởi cả hai bên. Bạn có thể tiến hành thanh toán.",
+                    "in_app", contract.ContractId, "contract", "contract_active");
+                await _notification.SendAsync(contract.SupplierId,
+                    $"Hợp đồng #{contract.ContractCode} đã được ký hoàn tất bởi cả hai bên.",
+                    "in_app", contract.ContractId, "contract", "contract_active");
+            }
+            else
+            {
+                // One party signed → ask the other to sign/reject
+                await _notification.SendAsync(notifyUserId,
+                    $"{signerName} đã ký hợp đồng #{contract.ContractCode}. Vui lòng xem xét và ký hoặc từ chối.",
+                    "in_app", contract.ContractId, "contract", "contract_sign_request");
+            }
         }
         catch { /* ignore */ }
 
@@ -248,6 +263,59 @@ public class ContractService : IContractService
         contract.TermsAndConditions = terms;
         contract.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        return (await GetContractByIdAsync(contractId))!;
+    }
+
+    public async Task<ContractDto> RejectContractAsync(int contractId, int userId, string? reason)
+    {
+        var contract = await _context.Contracts
+            .Include(c => c.Booking)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId && !c.IsDeleted)
+            ?? throw new KeyNotFoundException("Hợp đồng không tồn tại");
+
+        if (contract.ContractStatusId == 10)
+            throw new InvalidOperationException("Hợp đồng đã bị hủy trước đó");
+
+        if (contract.ContractStatusId == 8) // both signed = active
+            throw new InvalidOperationException("Không thể từ chối hợp đồng đã được ký hoàn tất");
+
+        bool isCustomer = contract.CustomerId == userId;
+        bool isSupplier = contract.SupplierId == userId;
+
+        if (!isCustomer && !isSupplier)
+            throw new UnauthorizedAccessException("Bạn không có quyền từ chối hợp đồng này");
+
+        // Terminate contract
+        contract.ContractStatusId = 10; // terminated
+        contract.UpdatedAt = DateTime.UtcNow;
+
+        // Cancel the booking
+        if (contract.Booking != null)
+        {
+            contract.Booking.StatusId = 5; // cancelled
+            contract.Booking.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Notify both parties
+        try
+        {
+            string rejecterRole = isCustomer ? "Khách hàng" : "Chủ xe";
+            string rejectReason = string.IsNullOrEmpty(reason) ? "" : $" Lý do: {reason}";
+
+            int otherUserId = isCustomer ? contract.SupplierId : contract.CustomerId;
+            await _notification.SendAsync(otherUserId,
+                $"{rejecterRole} đã từ chối hợp đồng #{contract.ContractCode}.{rejectReason} Đơn đặt xe đã bị hủy.",
+                "in_app", contract.ContractId, "contract", "contract_rejected");
+
+            // Also notify the rejecter for confirmation
+            await _notification.SendAsync(userId,
+                $"Bạn đã từ chối hợp đồng #{contract.ContractCode}. Đơn đặt xe đã bị hủy.",
+                "in_app", contract.ContractId, "contract");
+        }
+        catch { /* ignore */ }
 
         return (await GetContractByIdAsync(contractId))!;
     }
@@ -691,7 +759,7 @@ BÊN B (Bên thuê):
         if (contract.SignedByCustomer)
             throw new InvalidOperationException("Bạn đã ký hợp đồng này rồi");
 
-        contract.CustomerSignature = request.Signature;
+        contract.CustomerSignature = request.CustomerSignature;
         contract.UpdatedAt = DateTime.UtcNow;
 
         // Update contract status
@@ -706,14 +774,15 @@ BÊN B (Bên thuê):
 
         await _context.SaveChangesAsync();
 
-        // Notify supplier that customer signed
+        // Notify supplier that customer signed — ask them to sign or reject
         try
         {
             await _notification.SendAsync(contract.SupplierId,
-                $"Khách hàng đã ký hợp đồng #{contract.ContractCode}. Vui lòng ký để hoàn tất.",
-                "contract", contract.BookingId, "booking");
+                $"Khách hàng đã ký hợp đồng #{contract.ContractCode}. Vui lòng xem xét và ký hoặc từ chối.",
+                "in_app", contract.ContractId, "contract", "contract_sign_request");
         }
         catch { /* ignore */ }
 
         return await GetContractForReviewAsync(contractId, userId);
     }
+}

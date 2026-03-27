@@ -242,7 +242,7 @@ const CarCard = ({ car, type = "default", isLoading = false, onBookNow, onFavori
                         getImageUrl(car.thumbnailUrl) ||
                         getImageUrl(car.images?.find((img) => img.isMain)?.imageUrl) ||
                         getImageUrl(car.images?.[0]?.imageUrl) ||
-                        "https://via.placeholder.com/400x250?text=Car+Image"
+                        "/placeholder-car.svg"
                     }
                     alt={`${car.brandName} ${car.carModel || car.model}`}
                     className={`w-full h-full object-cover object-center transition-all duration-700 group-hover:scale-110 ${imageLoaded ? "opacity-100" : "opacity-0"

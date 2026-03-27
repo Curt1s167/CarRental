@@ -12,6 +12,7 @@ public interface IContractService
     Task<IEnumerable<ContractListDto>> GetContractsByCustomerAsync(int customerId);
     Task<ContractDto> GenerateContractAsync(int bookingId, int supplierId);
     Task<ContractDto> SignContractAsync(int contractId, int userId, string signature);
+    Task<ContractDto> RejectContractAsync(int contractId, int userId, string? reason);
     Task<ContractDto> UpdateContractTermsAsync(int contractId, int supplierId, string terms);
 
     // ── License Verification ─────────────────────────────────────────────────
@@ -24,5 +25,3 @@ public interface IContractService
     Task<ContractReviewDto> GetContractForReviewAsync(int contractId, int userId);
     Task<ContractReviewDto> SignAndPayAsync(int contractId, int userId, ContractSignAndPayRequest request);
 }
-
-```

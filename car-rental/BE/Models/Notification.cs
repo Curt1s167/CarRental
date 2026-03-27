@@ -25,6 +25,20 @@ public class Notification
     [Column("status_id")]
     public int StatusId { get; set; } = 1;
 
+    /// <summary>Action type: contract_sign, refund_approve, etc. Null = informational only</summary>
+    [MaxLength(50)]
+    [Column("action_type")]
+    public string? ActionType { get; set; }
+
+    /// <summary>Related entity ID (booking_id, contract_id, etc.)</summary>
+    [Column("entity_id")]
+    public int? EntityId { get; set; }
+
+    /// <summary>Entity type: booking, contract, refund</summary>
+    [MaxLength(50)]
+    [Column("entity_type")]
+    public string? EntityType { get; set; }
+
     [Column("is_deleted")]
     public bool IsDeleted { get; set; } = false;
 
