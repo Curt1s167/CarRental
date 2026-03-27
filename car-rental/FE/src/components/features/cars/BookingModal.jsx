@@ -17,15 +17,8 @@ import { getBookedDates, getProfile, getRatingsByCarId } from "@/services/api"
 import { useAuth } from "@/hooks/useAuth"
 
 const BookingModal = ({ isOpen, onClose, car, onSubmitBooking }) => {
-  console.log('[BookingModal] render - isOpen:', isOpen, '| car:', car, '| onClose:', typeof onClose, '| onSubmitBooking:', typeof onSubmitBooking);
-  if (!isOpen) {
-    console.warn('[BookingModal] Không render vì isOpen =', isOpen);
-    return null;
-  }
-  if (!car) {
-    console.warn('[BookingModal] Không render vì thiếu car:', car);
-    return null;
-  }
+  if (!isOpen) return null;
+  if (!car) return null;
   const { isAuthenticated, user } = useAuth()
   const [userProfile, setUserProfile] = useState(null)
   const [userAddress, setUserAddress] = useState("")

@@ -34,6 +34,7 @@ import OwnerRequests from '../components/features/admin/OwnerRequests';
 import PaymentsAdmin from '../components/features/admin/PaymentsAdmin';
 import AdminCarApproval from '../components/features/admin/CarApprovalPage';
 import CarConditionReportManagement from '../components/CarConditionReport/CarConditionReportManagement';
+import RefundManagement from '../components/features/admin/RefundManagement';
 
 // Supplier Pages
 import SupplierCarDashboard from '../components/features/Supplier/SupplierCarDashboard';
@@ -205,6 +206,7 @@ const AppRoutes = () => {
                 <Route path="car-approval" element={<AdminCarApproval />} />
                 <Route path="payments" element={<PaymentsAdmin />} />
                 <Route path="car-condition-reports" element={<CarConditionReportManagement />} />
+                <Route path="refund-requests" element={<RefundManagement />} />
             </Route>
 
             <Route path="/owner-registration" element={<OwnerRegistrationPage />} />

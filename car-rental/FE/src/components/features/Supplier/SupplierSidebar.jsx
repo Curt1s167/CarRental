@@ -1,7 +1,7 @@
 import React from "react";
 import {
   FaHome, FaPlus, FaCar, FaClipboardList, FaChartBar, FaUser, FaComments, FaSignOutAlt,
-  FaFileContract, FaIdCard
+  FaFileContract, FaIdCard, FaUndoAlt
 } from "react-icons/fa";
 
 const menuItems = [
@@ -10,6 +10,7 @@ const menuItems = [
   { key: "car-status", label: "Quản lý xe", icon: <FaCar /> },
   { key: "orders", label: "Quản lý đơn đặt xe", icon: <FaClipboardList /> },
   { key: "contracts", label: "Hợp đồng thuê xe", icon: <FaFileContract /> },
+  { key: "refund-requests", label: "Yêu cầu hoàn tiền", icon: <FaUndoAlt /> },
   { key: "license-verify", label: "Xác minh bằng lái", icon: <FaIdCard /> },
   { key: "report", label: "Báo cáo & thống kê", icon: <FaChartBar /> },
   { key: "profile", label: "Hồ sơ cá nhân", icon: <FaUser /> },

@@ -1499,8 +1499,6 @@ export const getRatingsByBookingId = async (bookingId) => {
     return [];
 };
 
-export default api;
-
 // Lấy danh sách xe chờ duyệt (admin)
 export const getPendingCars = async () => {
   const token = getToken?.() || getItem('token');
@@ -2314,6 +2312,95 @@ export const signAndPay = async (contractId, signature, paymentMethod, amount) =
         paymentMethod,
         amount
     }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+// Từ chối hợp đồng
+export const rejectContract = async (contractId, reason) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.post(`/api/contracts/${contractId}/reject`, { reason }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+
+export const getNotifications = async () => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get('/api/notifications', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export const markAllNotificationsRead = async () => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.patch('/api/notifications/mark-all-read', {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data;
+};
+
+export const getUnreadNotificationCount = async () => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get('/api/notifications/unread-count', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  REFUND REQUESTS
+// ═══════════════════════════════════════════════════════════════
+
+export const createRefundRequest = async (bookingId, reason) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.post('/api/refund-requests', { bookingId, reason }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export const respondToRefundRequest = async (refundRequestId, response, reason) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.patch(`/api/refund-requests/${refundRequestId}/respond`, { response, reason }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export const getMyRefundRequests = async () => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get('/api/refund-requests/my-requests', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export const getRefundRequestsByBooking = async (bookingId) => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get(`/api/refund-requests/booking/${bookingId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export const getSupplierRefundRequests = async () => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get('/api/refund-requests/supplier/pending', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return res.data?.data ?? res.data;
+};
+
+export const getAdminRefundRequests = async () => {
+    const token = getToken?.() || getItem('token');
+    const res = await api.get('/api/refund-requests/admin/pending', {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     return res.data?.data ?? res.data;

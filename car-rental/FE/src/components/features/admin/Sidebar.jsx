@@ -11,7 +11,8 @@ import {
     FaClipboardList,
     FaSignOutAlt,
     FaMoneyCheckAlt,
-    FaCar
+    FaCar,
+    FaUndoAlt
 } from "react-icons/fa";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -23,6 +24,7 @@ const menuItems = [
     { path: "/admin/car-approval", icon: <FaCar />, label: "Duyệt xe" },
     { path: "/admin/payments", icon: <FaMoneyCheckAlt />, label: "Thanh toán" },
     { path: "/admin/car-condition-reports", icon: <FaClipboardList />, label: "Báo cáo tình trạng xe" },
+    { path: "/admin/refund-requests", icon: <FaUndoAlt />, label: "Yêu cầu hoàn tiền" },
 ];
 
 export const Sidebar = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import {
   FaFileContract, FaSearch, FaEye, FaSignature, FaTimes,
@@ -8,10 +8,10 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
-  getCustomerContracts, getContractById, signContract
+  getCustomerContracts, getContractById, signContract, rejectContract
 } from "@/services/api";
 import SignatureModal, { SignatureDisplay } from "@/components/common/SignatureModal";
-import StripePayment from "@/components/features/payments/StripePayment";
+const StripePayment = lazy(() => import("@/components/features/payments/StripePayment"));
 
 const statusConfig = {
   6:  { label: "Bản nháp",   color: "bg-yellow-100 text-yellow-800", icon: <FaClock /> },
@@ -149,6 +149,7 @@ const CustomerContractDetail = ({ contractId, onBack }) => {
   const [showSignModal, setShowSignModal] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const contractRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -209,6 +210,19 @@ const CustomerContractDetail = ({ contractId, onBack }) => {
     } finally { setPdfLoading(false); }
   };
 
+  const handleReject = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối hợp đồng này? Đơn đặt xe sẽ bị hủy.")) return;
+    try {
+      setRejecting(true);
+      const reason = window.prompt("Nhập lý do từ chối (tùy chọn):");
+      await rejectContract(contractId, reason || "Khách hàng từ chối hợp đồng");
+      toast.success("Đã từ chối hợp đồng. Đơn đặt xe đã bị hủy.");
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Lỗi từ chối hợp đồng");
+    } finally { setRejecting(false); }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <FaSync className="animate-spin text-3xl text-emerald-500" />
@@ -217,6 +231,7 @@ const CustomerContractDetail = ({ contractId, onBack }) => {
   if (!contract) return <div className="text-center py-20 text-gray-400">Không tìm thấy hợp đồng</div>;
 
   const canSign = !contract.signedByCustomer && (contract.contractStatusId === 6 || contract.contractStatusId === 7);
+  const canReject = contract.contractStatusId !== 10 && contract.contractStatusId !== 8;
   const bothSigned = contract.signedByCustomer && contract.signedBySupplier;
   const needsPayment = bothSigned && (!contract.paymentInfo || contract.paymentInfo.paymentStatus !== "completed");
 
@@ -254,10 +269,18 @@ const CustomerContractDetail = ({ contractId, onBack }) => {
             <p className="font-semibold text-orange-800">Hợp đồng cần chữ ký của bạn</p>
             <p className="text-sm text-orange-600">Vui lòng đọc kỹ điều khoản và ký xác nhận bên dưới</p>
           </div>
-          <button onClick={() => setShowSignModal(true)}
-            className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition font-semibold flex items-center gap-2 shadow-lg">
-            <FaSignature /> Ký ngay
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowSignModal(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition font-semibold flex items-center gap-2 shadow-lg">
+              <FaSignature /> Ký ngay
+            </button>
+            {canReject && (
+              <button onClick={handleReject} disabled={rejecting}
+                className="px-4 py-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-semibold flex items-center gap-2 disabled:opacity-50">
+                <FaTimes /> {rejecting ? "..." : "Từ chối"}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -401,10 +424,18 @@ const CustomerContractDetail = ({ contractId, onBack }) => {
               <SignatureDisplay signature={contract.customerSignature} label={contract.customerName || "Khách hàng"} signed={contract.signedByCustomer} />
               {contract.signedByCustomer && <p className="text-xs text-green-600 mt-2 font-medium">✓ Đã ký điện tử</p>}
               {canSign && (
-                <button onClick={() => setShowSignModal(true)}
-                  className="mt-3 w-full px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm rounded-lg hover:from-emerald-700 hover:to-teal-700 transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 font-semibold">
-                  <FaSignature /> Ký hợp đồng
-                </button>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => setShowSignModal(true)}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm rounded-lg hover:from-emerald-700 hover:to-teal-700 transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 font-semibold">
+                    <FaSignature /> Ký hợp đồng
+                  </button>
+                  {canReject && (
+                    <button onClick={handleReject} disabled={rejecting}
+                      className="px-4 py-2.5 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition flex items-center justify-center gap-2 font-semibold disabled:opacity-50">
+                      <FaTimes /> {rejecting ? "..." : "Từ chối"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -470,9 +501,11 @@ const CustomerContractDetail = ({ contractId, onBack }) => {
             </div>
           ) : (
             <div className="max-w-md mx-auto bg-white rounded-xl p-6 shadow-sm">
+              <Suspense fallback={<div className="text-center py-4">Đang tải thanh toán...</div>}>
               <StripePayment bookingId={contract.bookingId} amount={contract.totalFare}
                 onSuccess={handlePaymentSuccess}
                 onError={(msg) => toast.error(msg || "Thanh toán thất bại")} />
+              </Suspense>
               <button onClick={() => setShowPayment(false)} className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700 transition">← Quay lại</button>
             </div>
           )}

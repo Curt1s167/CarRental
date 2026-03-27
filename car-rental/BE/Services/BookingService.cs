@@ -15,15 +15,18 @@ public class BookingService : IBookingService
     private readonly ApplicationDbContext _context;
     private readonly INotificationService _notification;
     private readonly IEmailService _email;
+    private readonly IContractService _contractService;
 
     public BookingService(IBookingRepository bookingRepo, ICarRepository carRepo,
-        ApplicationDbContext context, INotificationService notification, IEmailService email)
+        ApplicationDbContext context, INotificationService notification, IEmailService email,
+        IContractService contractService)
     {
         _bookingRepo = bookingRepo;
         _carRepo = carRepo;
         _context = context;
         _notification = notification;
         _email = email;
+        _contractService = contractService;
     }
 
     public async Task<BookingDto?> GetByIdAsync(int bookingId)
@@ -153,6 +156,13 @@ public class BookingService : IBookingService
             }
         }
         catch { /* ignore email errors */ }
+
+        // Auto-generate contract for the booking (non-blocking)
+        try
+        {
+            await _contractService.GenerateContractAsync(booking.BookingId, car.SupplierId);
+        }
+        catch { /* ignore — contract can be generated manually later */ }
 
         return (await GetByIdAsync(booking.BookingId))!;
     }

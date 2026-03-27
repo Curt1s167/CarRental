@@ -15,9 +15,9 @@ export const formatCurrency = (value) => {
 export const formatDate = (date) => {
   if (!date) return '—';
   const d = new Date(date);
-  return d.toLocaleDateString('vi-VN', { 
-    year: 'numeric', 
-    month: '2-digit', 
+  return d.toLocaleDateString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit'
@@ -332,7 +332,7 @@ export const generatePDF = async (contractData, filename = 'contract.pdf') => {
     const html = generateContractHTML(contractData);
     const element = document.createElement('div');
     element.innerHTML = html;
-    
+
     // Try using html2pdf if available
     if (window.html2pdf) {
       window.html2pdf().set({

@@ -38,4 +38,21 @@ public class NotificationController : ControllerBase
         var count = await _notificationService.GetUnreadCountAsync(CurrentUserId);
         return Ok(ApiResponse<int>.Ok(count));
     }
+
+    /// <summary>
+    /// Respond to an actionable notification (Accept/Reject).
+    /// The actual business logic (contract sign/reject, refund approve/deny) is handled
+    /// by dedicated endpoints; this just marks the notification as read.
+    /// </summary>
+    [HttpPatch("{id}/respond")]
+    public async Task<IActionResult> Respond(int id, [FromBody] NotificationRespondDto dto)
+    {
+        await _notificationService.RespondAsync(id, CurrentUserId, dto.Response);
+        return Ok(ApiResponse.OkNoData("Đã phản hồi thông báo"));
+    }
+}
+
+public class NotificationRespondDto
+{
+    public string Response { get; set; } = string.Empty; // "accept" or "reject"
 }

@@ -5,6 +5,7 @@ namespace CarRental.API.Repositories.Interfaces;
 public interface IUserRepository : IBaseRepository<User>
 {
     Task<User?> GetByEmailAsync(string email);
+    Task<User?> GetByEmailOrUsernameAsync(string identifier);
     Task<User?> GetWithDetailAsync(int userId);
     Task<bool> EmailExistsAsync(string email);
     Task<IEnumerable<User>> GetByRoleAsync(string roleName);

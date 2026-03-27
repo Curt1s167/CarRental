@@ -30,6 +30,10 @@ import {
   FaCar,
   FaHeart,
   FaThumbsUp,
+  FaFileContract,
+  FaIdCard,
+  FaGavel,
+  FaHandshake,
 } from "react-icons/fa"
 import { FaArrowUp } from "react-icons/fa"
 import { toast } from "react-toastify"
@@ -203,6 +207,264 @@ const ServiceToggle = ({ icon: Icon, title, description, price, checked, onChang
           <div className="w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════
+// Contract Preview Component - Hợp đồng thuê xe
+// ═══════════════════════════════════════════════
+const ContractPreview = ({ car, bookingData, contactInfo, priceBreakdown, rentalDays, withDriver }) => {
+  const [expanded, setExpanded] = useState(true)
+
+  const startDate = bookingData?.pickupDateTime
+    ? new Date(bookingData.pickupDateTime).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "N/A"
+  const endDate = bookingData?.dropoffDateTime
+    ? new Date(bookingData.dropoffDateTime).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "N/A"
+
+  const dailyRate = car?.rentalPricePerDay || car?.dailyRate || car?.daily_rate || 0
+  const supplierName = car?.supplier?.fullName || car?.supplierName || car?.supplier?.username || "Chủ sở hữu xe"
+  const supplierPhone = car?.supplier?.phone || "Theo hệ thống"
+  const supplierEmail = car?.supplier?.email || "Theo hệ thống"
+
+  const Section = ({ icon: Icon, title, color, children }) => (
+    <div className="mb-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+          <Icon className="text-lg" />
+        </div>
+        <h4 className="font-bold text-gray-800 text-lg">{title}</h4>
+      </div>
+      {children}
+    </div>
+  )
+
+  const InfoRow = ({ label, value, highlight }) => (
+    <div className="flex justify-between items-center py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+      <span className="text-gray-600 text-sm">{label}</span>
+      <span className={`font-semibold text-sm text-right max-w-[60%] ${highlight ? "text-blue-700" : "text-gray-800"}`}>
+        {value || "N/A"}
+      </span>
+    </div>
+  )
+
+  return (
+    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl mb-8 border border-gray-100 overflow-hidden">
+      {/* Contract Header */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+              <FaFileContract className="text-2xl" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">HỢP ĐỒNG THUÊ XE TỰ LÁI</h2>
+              <p className="text-blue-100 text-sm mt-1">Vui lòng xem kỹ trước khi xác nhận thanh toán</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-all"
+          >
+            {expanded ? <FaChevronUp /> : <FaChevronDown />}
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="p-8">
+          {/* Điều 1: Thông tin các bên */}
+          <Section icon={FaUser} title="Điều 1: Thông tin các bên" color="bg-blue-100 text-blue-600">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Bên A - Cho thuê */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">BÊN A</span>
+                  <span className="text-sm font-semibold text-gray-700">Bên cho thuê</span>
+                </div>
+                <div className="space-y-1">
+                  <InfoRow label="Họ tên" value={supplierName} />
+                  <InfoRow label="Điện thoại" value={supplierPhone} />
+                  <InfoRow label="Email" value={supplierEmail} />
+                </div>
+              </div>
+              {/* Bên B - Thuê */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border border-purple-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">BÊN B</span>
+                  <span className="text-sm font-semibold text-gray-700">Bên thuê</span>
+                </div>
+                <div className="space-y-1">
+                  <InfoRow label="Họ tên" value={contactInfo.fullName} />
+                  <InfoRow label="Điện thoại" value={contactInfo.phone} />
+                  <InfoRow label="Email" value={contactInfo.email} />
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Điều 2: Thông tin xe */}
+          <Section icon={FaCar} title="Điều 2: Thông tin xe cho thuê" color="bg-green-100 text-green-600">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-100">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
+                <InfoRow label="Xe" value={`${car?.brand?.brandName || car?.brandName || ""} ${car?.carModel || car?.model || ""}`} highlight />
+                <InfoRow label="Biển số" value={car?.licensePlate} />
+                <InfoRow label="Năm SX" value={car?.year} />
+                <InfoRow label="Số chỗ" value={car?.seats || car?.numOfSeats} />
+                <InfoRow label="Màu sắc" value={car?.color} />
+                <InfoRow label="Hộp số" value={car?.transmission === "automatic" ? "Tự động" : car?.transmission === "manual" ? "Số sàn" : car?.transmission} />
+                <InfoRow label="Nhiên liệu" value={car?.fuelType?.fuelTypeName || car?.fuelTypeName} />
+              </div>
+            </div>
+          </Section>
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Điều 3: Thời gian & Địa điểm */}
+          <Section icon={FaCalendarAlt} title="Điều 3: Thời gian & Địa điểm" color="bg-yellow-100 text-yellow-600">
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-5 border border-yellow-100">
+              <div className="space-y-1">
+                <InfoRow label="Thời gian thuê" value={`${rentalDays} ngày`} highlight />
+                <InfoRow label="Nhận xe" value={startDate} />
+                <InfoRow label="Trả xe" value={endDate} />
+                <InfoRow label="Địa điểm nhận xe" value={contactInfo.pickupAddress || bookingData?.pickupLocation} />
+                <InfoRow label="Địa điểm trả xe" value={contactInfo.dropoffAddress || bookingData?.dropoffLocation} />
+                {withDriver && <InfoRow label="Tài xế" value="Có thuê tài xế" highlight />}
+              </div>
+            </div>
+          </Section>
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Điều 4: Giá thuê & Thanh toán */}
+          <Section icon={FaCreditCard} title="Điều 4: Giá thuê & Thanh toán" color="bg-indigo-100 text-indigo-600">
+            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-5 border border-indigo-100">
+              <div className="space-y-1">
+                <InfoRow label="Đơn giá thuê" value={`${dailyRate.toLocaleString("vi-VN")} VNĐ / ngày`} />
+                <InfoRow label="Số ngày thuê" value={`${rentalDays} ngày`} />
+                <InfoRow label="Tiền thuê xe" value={`${priceBreakdown.basePrice.toLocaleString("vi-VN")} VNĐ`} />
+                {priceBreakdown.extraFee > 0 && (
+                  <InfoRow label="Phí dịch vụ bổ sung" value={`${priceBreakdown.extraFee.toLocaleString("vi-VN")} VNĐ`} />
+                )}
+                <InfoRow label="Phí dịch vụ (10%)" value={`${priceBreakdown.serviceFee.toLocaleString("vi-VN")} VNĐ`} />
+                <InfoRow label="Thuế VAT (10%)" value={`${priceBreakdown.tax.toLocaleString("vi-VN")} VNĐ`} />
+                {priceBreakdown.discount > 0 && (
+                  <InfoRow label="Giảm giá" value={`-${priceBreakdown.discount.toLocaleString("vi-VN")} VNĐ`} />
+                )}
+                <div className="border-t border-indigo-200 mt-3 pt-3">
+                  <div className="flex justify-between items-center py-2 px-4 bg-indigo-100 rounded-xl">
+                    <span className="font-bold text-indigo-800">Tổng tiền</span>
+                    <span className="font-bold text-xl text-indigo-700">{priceBreakdown.total.toLocaleString("vi-VN")} VNĐ</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 px-4 bg-yellow-100 rounded-xl mt-2">
+                  <span className="font-semibold text-yellow-800">Cần thanh toán ngay (30%)</span>
+                  <span className="font-bold text-lg text-yellow-700">{priceBreakdown.deposit.toLocaleString("vi-VN")} VNĐ</span>
+                </div>
+                <div className="px-4 mt-2">
+                  <p className="text-xs text-gray-500">Phương thức thanh toán: Thanh toán trực tuyến qua hệ thống hoặc tiền mặt</p>
+                  <p className="text-xs text-gray-500">Số tiền còn lại thanh toán khi nhận xe</p>
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Điều 5 & 6: Trách nhiệm */}
+          <Section icon={FaGavel} title="Điều 5: Trách nhiệm bên thuê" color="bg-red-100 text-red-600">
+            <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl p-5 border border-red-100">
+              <ul className="space-y-3">
+                {[
+                  "Sử dụng xe đúng mục đích, không vi phạm pháp luật",
+                  "Bảo quản xe trong suốt thời gian thuê",
+                  "Trả xe đúng hạn, đúng tình trạng",
+                  "Chịu chi phí sửa chữa nếu có hư hỏng do lỗi người thuê",
+                  "Không cho bên thứ ba mượn/sử dụng xe",
+                  "Phải có bằng lái xe hợp lệ đã được xác minh",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
+                    <span className="bg-red-200 text-red-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+
+          <Section icon={FaHandshake} title="Điều 6: Trách nhiệm bên cho thuê" color="bg-teal-100 text-teal-600">
+            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-5 border border-teal-100">
+              <ul className="space-y-3">
+                {[
+                  "Bàn giao xe đúng thời gian, đúng tình trạng",
+                  "Cung cấp đầy đủ giấy tờ xe hợp lệ",
+                  "Hỗ trợ kỹ thuật khi xe gặp sự cố (không do lỗi người thuê)",
+                  "Hoàn tiền theo chính sách khi hủy hợp đồng",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
+                    <span className="bg-teal-200 text-teal-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Điều 7: Bồi thường */}
+          <Section icon={FaShieldAlt} title="Điều 7: Bồi thường & Xử lý vi phạm" color="bg-orange-100 text-orange-600">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 border border-orange-100">
+              <ul className="space-y-3">
+                {[
+                  "Vi phạm hợp đồng: Bồi thường theo thiệt hại thực tế",
+                  "Trả xe trễ: Tính phí phát sinh theo ngày",
+                  "Hư hỏng xe: Đền bù theo biên bản kiểm tra",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
+                    <FaExclamationTriangle className="text-orange-500 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Điều 8: Điều khoản chung */}
+          <Section icon={FaFileAlt} title="Điều 8: Điều khoản chung" color="bg-gray-200 text-gray-600">
+            <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-5 border border-gray-200">
+              <ul className="space-y-3">
+                {[
+                  "Hợp đồng có hiệu lực khi cả hai bên ký xác nhận điện tử",
+                  "Chữ ký điện tử có giá trị pháp lý tương đương chữ ký tay",
+                  "Mã hợp đồng là duy nhất, không thể thay đổi sau khi ký",
+                  "Tranh chấp giải quyết theo pháp luật Việt Nam",
+                  "Hợp đồng được lập thành bản điện tử, mỗi bên giữ quyền truy cập",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
+                    <FaCheck className="text-green-500 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+
+          {/* Footer note */}
+          <div className="mt-6 text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-xs text-gray-500">
+              <FaInfoCircle className="inline mr-1" />
+              Hợp đồng chính thức sẽ được tạo sau khi thanh toán thành công. Bạn và bên cho thuê sẽ cần ký xác nhận điện tử trên hệ thống.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1064,6 +1326,18 @@ const BookingConfirmationPage = () => {
                 />
               </div>
             </div>
+
+            {/* Contract Preview */}
+            {car && (
+              <ContractPreview
+                car={car}
+                bookingData={bookingData}
+                contactInfo={contactInfo}
+                priceBreakdown={priceBreakdown}
+                rentalDays={rentalDays}
+                withDriver={withDriver}
+              />
+            )}
 
             {/* Terms and Conditions */}
             <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-gray-100">

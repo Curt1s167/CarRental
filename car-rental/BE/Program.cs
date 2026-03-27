@@ -43,6 +43,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IRatingService, RatingService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRefundRequestService, RefundRequestService>();
 
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddSingleton<JwtService>();

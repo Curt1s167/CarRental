@@ -14,12 +14,13 @@ import SupplierReport from "./SupplierReport";
 import SupplierProfile from "./SupplierProfile";
 import ChatWindow from '../../Chat/ChatWindow';
 import { AuthContext } from '@/store/AuthContext';
-import { getSupplierDashboardSummary, getSupplierCars, getSupplierOrders, getSupplierMonthlyStats } from '@/services/api';
+import { getSupplierDashboardSummary, getSupplierCars, getSupplierOrders, getSupplierMonthlyStats, getUnreadNotificationCount } from '@/services/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import SupplierSidebar from "./SupplierSidebar";
 import SupplierContractManagement from "./SupplierContractManagement";
 import SupplierLicenseVerification from "./SupplierLicenseVerification";
+import SupplierRefundManagement from "./SupplierRefundManagement";
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -74,6 +75,20 @@ const SupplierCarDashboard = () => {
   const [ordersData, setOrdersData] = useState([]); // Thêm state lưu ordersData
   const { user, logout } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
+  const [notifCount, setNotifCount] = useState(0);
+
+  // Fetch real notification count
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const count = await getUnreadNotificationCount();
+        setNotifCount(typeof count === 'number' ? count : 0);
+      } catch { /* silent */ }
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Lấy profile từ API để lấy userId
   useEffect(() => {
@@ -426,7 +441,9 @@ const SupplierCarDashboard = () => {
                       className="bg-white/20 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/30 flex items-center transition-all border border-white/30 shadow-lg group"
                     >
                       <FaBell className="mr-2 group-hover:animate-bounce" />
-                      <span className="bg-gradient-to-r from-red-500 to-pink-500 text-xs rounded-full px-2 py-1 ml-1 animate-pulse shadow-lg">3</span>
+                      {notifCount > 0 && (
+                        <span className="bg-gradient-to-r from-red-500 to-pink-500 text-xs rounded-full px-2 py-1 ml-1 animate-pulse shadow-lg">{notifCount > 99 ? '99+' : notifCount}</span>
+                      )}
                     </motion.button>
                     <motion.button 
                       whileHover={{ scale: 1.05, y: -2 }}
@@ -1018,6 +1035,8 @@ const SupplierCarDashboard = () => {
         return <SupplierOrderManagement />;
       case "contracts":
         return <SupplierContractManagement />;
+      case "refund-requests":
+        return <SupplierRefundManagement />;
       case "license-verify":
         return <SupplierLicenseVerification />;
       case "drivers":

@@ -14,6 +14,11 @@ public class UserRepository : BaseRepository<User>, IUserRepository
                     .Include(u => u.UserDetail)
                     .FirstOrDefaultAsync(u => u.Email == email);
 
+    public async Task<User?> GetByEmailOrUsernameAsync(string identifier) =>
+        await _dbSet.Include(u => u.Role)
+                    .Include(u => u.UserDetail)
+                    .FirstOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
+
     public async Task<User?> GetWithDetailAsync(int userId) =>
         await _dbSet.Include(u => u.Role)
                     .Include(u => u.UserDetail)

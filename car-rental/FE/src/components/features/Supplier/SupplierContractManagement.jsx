@@ -9,7 +9,7 @@ import {
 import { toast } from "react-toastify";
 import {
   getSupplierContracts, getContractById, generateContract,
-  signContract, updateContractTerms, getSupplierOrders
+  signContract, updateContractTerms, getSupplierOrders, rejectContract
 } from "@/services/api";
 import SignatureModal, { SignatureDisplay } from "@/components/common/SignatureModal";
 
@@ -142,6 +142,7 @@ const ContractDetail = ({ contractId, onBack }) => {
   const [editingTerms, setEditingTerms] = useState(false);
   const [editedTerms, setEditedTerms] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const contractRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -205,6 +206,19 @@ const ContractDetail = ({ contractId, onBack }) => {
     } finally { setPdfLoading(false); }
   };
 
+  const handleReject = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối hợp đồng này? Đơn đặt xe sẽ bị hủy.")) return;
+    try {
+      setRejecting(true);
+      const reason = window.prompt("Nhập lý do từ chối (tùy chọn):");
+      await rejectContract(contractId, reason || "Chủ xe từ chối hợp đồng");
+      toast.success("Đã từ chối hợp đồng. Đơn đặt xe đã bị hủy.");
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Lỗi từ chối hợp đồng");
+    } finally { setRejecting(false); }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <FaSync className="animate-spin text-3xl text-indigo-500" />
@@ -214,6 +228,7 @@ const ContractDetail = ({ contractId, onBack }) => {
 
   const isDraft = contract.contractStatusId === 6;
   const canSign = !contract.signedBySupplier && (contract.contractStatusId === 6 || contract.contractStatusId === 7);
+  const canReject = contract.contractStatusId !== 10 && contract.contractStatusId !== 8; // not terminated, not active
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -385,10 +400,18 @@ const ContractDetail = ({ contractId, onBack }) => {
               <SignatureDisplay signature={contract.supplierSignature} label={contract.supplierName || "Chủ xe"} signed={contract.signedBySupplier} />
               {contract.signedBySupplier && <p className="text-xs text-green-600 mt-2 font-medium">✓ Đã ký điện tử</p>}
               {canSign && (
-                <button onClick={() => setShowSignModal(true)}
-                  className="mt-3 w-full px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm rounded-lg hover:from-indigo-700 hover:to-blue-700 transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 font-semibold">
-                  <FaSignature /> Ký hợp đồng
-                </button>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => setShowSignModal(true)}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm rounded-lg hover:from-indigo-700 hover:to-blue-700 transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 font-semibold">
+                    <FaSignature /> Ký hợp đồng
+                  </button>
+                  {canReject && (
+                    <button onClick={handleReject} disabled={rejecting}
+                      className="px-4 py-2.5 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition flex items-center justify-center gap-2 font-semibold disabled:opacity-50">
+                      <FaTimes /> {rejecting ? "Đang xử lý..." : "Từ chối"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
             <div className={`rounded-xl p-5 border text-center ${contract.signedByCustomer ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}>

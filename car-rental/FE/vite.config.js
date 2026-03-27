@@ -16,6 +16,11 @@ export default defineConfig({
     modules: {
       localsConvention: 'camelCase',
     },
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+      },
+    },
   },
   server: {
     proxy: {
